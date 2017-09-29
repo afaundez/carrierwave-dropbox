@@ -10,14 +10,14 @@ module CarrierWave
 
       # Store a single file
       def store!(file)
-        location = "/#{uploader.store_path}"
+        location = "#{uploader.store_path}"
         res = dropbox_client.upload(location, file.to_file)
         uploader.model.update_column uploader.mounted_as, res.id
       end
 
       # Retrieve a single file
       def retrieve!(file_id)
-        id = file_id.match(/^id:/) ? file_id : "/#{uploader.store_path file_id}"
+        id = file_id.match(/^id:/) ? file_id : "#{uploader.store_path file_id}"
         CarrierWave::Storage::Dropbox::File.new(uploader, config, id, dropbox_client)
       end
 
@@ -64,7 +64,7 @@ module CarrierWave
 
         def delete
           path = @path
-          path = "/#{path}" if @config[:access_type] == "dropbox"
+          path = "#{path}" if @config[:access_type] == "dropbox"
           begin
             @client.delete @file_id
           rescue ::Dropbox::ApiError
