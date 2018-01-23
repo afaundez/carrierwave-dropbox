@@ -1,5 +1,5 @@
 # encoding: utf-8
-require 'dropbox'
+require 'dropbox_api'
 
 module CarrierWave
   module Storage
@@ -10,7 +10,7 @@ module CarrierWave
 
       # Store a single file
       def store!(file)
-        location = "#{uploader.store_path}"
+        location = "/#{uploader.store_path}"
         res = dropbox_client.upload(location, file.to_file)
         uploader.model.update_column uploader.mounted_as, res.id
       end
@@ -23,7 +23,7 @@ module CarrierWave
 
       def dropbox_client
         @dropbox_client ||= begin
-          ::Dropbox::Client.new(config[:access_token])
+          ::DropboxApi::Client.new(config[:access_token])
         end
       end
 
@@ -32,12 +32,7 @@ module CarrierWave
       def config
         @config ||= {}
 
-        @config[:app_key] ||= uploader.dropbox_app_key
-        @config[:app_secret] ||= uploader.dropbox_app_secret
         @config[:access_token] ||= uploader.dropbox_access_token
-        @config[:access_token_secret] ||= uploader.dropbox_access_token_secret
-        @config[:access_type] ||= uploader.dropbox_access_type || "dropbox"
-        @config[:user_id] ||= uploader.dropbox_user_id
 
         @config
       end
@@ -51,20 +46,19 @@ module CarrierWave
         end
 
         def file_data
-          @file_data ||= @client.get_temporary_link(@file_id)
+          @file_data ||= @client.get_temporary_link(@file_id).instance_variable_get(:@data)
         end
 
         def filename
-          file_data[0].name
+          file_data['metadata']['name']
         end
 
         def url
-          file_data[1]
+          file_data['link']
         end
 
         def delete
           path = @path
-          path = "#{path}" if @config[:access_type] == "dropbox"
           begin
             @client.delete @file_id
           rescue ::Dropbox::ApiError
